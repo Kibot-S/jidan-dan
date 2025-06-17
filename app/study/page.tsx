@@ -1,73 +1,75 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import day01 from "@/data/jidandan_days/day01.json";
 
 export default function StudyPage() {
   const [day, setDay] = useState<number | null>(null);
-  const [index, setIndex] = useState(0);
-  const [words, setWords] = useState<any[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const words = day !== null ? day01 : [];
 
-  useEffect(() => {
-    if (day !== null) {
-      fetch(`/data/jidandan_days/day${String(day + 1).padStart(2, "0")}.json`)
-        .then((res) => res.json())
-        .then((data) => {
-          setWords(data);
-          setIndex(0);
-        });
-    }
-  }, [day]);
-
-  const handleNext = () => {
-    if (index < words.length - 1) {
-      setIndex((prev) => prev + 1);
-    }
+  const handleDaySelect = (selectedDay: number) => {
+    setDay(selectedDay);
+    setCurrentIndex(0);
   };
 
-  const handleReset = () => {
-    setIndex(0);
+  const handleNext = () => {
+    setCurrentIndex((prevIndex) => (prevIndex + 1) % words.length);
+  };
+
+  const handlePrev = () => {
+    setCurrentIndex((prevIndex) =>
+      prevIndex === 0 ? words.length - 1 : prevIndex - 1
+    );
   };
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-4">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-white p-4">
       {day === null ? (
-        <div className="grid grid-cols-4 gap-4">
-          {Array.from({ length: 33 }).map((_, i) => (
+        <div className="grid grid-cols-3 gap-4">
+          {[...Array(33)].map((_, i) => (
             <button
-              key={i}
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-md transition duration-200"
-              onClick={() => setDay(i)}
+              key={i + 1}
+              className="bg-blue-600 text-white px-4 py-2 rounded shadow"
+              onClick={() => handleDaySelect(i + 1)}
             >
               Day {i + 1}
             </button>
           ))}
         </div>
-      ) : words.length > 0 ? (
-        <div className="text-center space-y-4">
-          <div className="text-sm text-gray-500">
-            단어 {index + 1} / {words.length}
+      ) : (
+        <div className="flex flex-col items-center">
+          <div className="text-center text-2xl font-semibold mb-4">
+            {currentIndex + 1} / {words.length}
           </div>
-          <div className="text-3xl font-bold">{words[index].word}</div>
-          <div className="text-lg text-gray-700">{words[index].meaning}</div>
-
-          <div className="flex gap-4 justify-center mt-6">
+          <div className="text-center text-3xl font-bold mb-6">
+            {words[currentIndex].word}
+          </div>
+          <div className="text-center text-xl text-gray-700 mb-8">
+            {words[currentIndex].meaning}
+          </div>
+          <div className="flex gap-4">
             <button
-              onClick={handleNext}
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-md transition duration-200"
+              className="bg-gray-400 text-white px-4 py-2 rounded shadow"
+              onClick={handlePrev}
             >
-              다음 단어
+              이전단어
             </button>
             <button
-              onClick={handleReset}
-              className="px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white font-semibold rounded-xl shadow-md transition duration-200"
+              className="bg-blue-600 text-white px-4 py-2 rounded shadow"
+              onClick={handleNext}
+            >
+              다음단어
+            </button>
+            <button
+              className="bg-red-500 text-white px-4 py-2 rounded shadow"
+              onClick={() => setDay(null)}
             >
               처음부터
             </button>
           </div>
         </div>
-      ) : (
-        <div className="text-gray-600">로딩 중...</div>
       )}
-    </main>
+    </div>
   );
 }

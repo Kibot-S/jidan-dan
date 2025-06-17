@@ -1,46 +1,71 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import words from "@/data/words.json";
 
 export default function StatsPage() {
-  const [log, setLog] = useState<{ [date: string]: number }>({});
+  const [day, setDay] = useState<number | null>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [shuffledWords, setShuffledWords] = useState<any[]>([]);
 
-  useEffect(() => {
-    const stored = localStorage.getItem("jimin-study-log");
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      setLog(parsed);
-    }
-  }, []);
+  const startStats = (selectedDay: number) => {
+    const selectedWords = words[selectedDay];
+    const shuffled = [...selectedWords].sort(() => 0.5 - Math.random());
+    setShuffledWords(shuffled);
+    setCurrentIndex(0);
+    setDay(selectedDay);
+  };
 
-  const sortedDates = Object.keys(log).sort((a, b) => (a > b ? -1 : 1)); // 최신순
+  const goToNext = () => {
+    setCurrentIndex((prev) => (prev + 1) % shuffledWords.length);
+  };
+
+  const goToPrevious = () => {
+    setCurrentIndex((prev) =>
+      prev === 0 ? shuffledWords.length - 1 : prev - 1
+    );
+  };
+
+  const resetStats = () => {
+    setCurrentIndex(0);
+  };
+
+  if (day === null) {
+    return (
+      <div className="flex flex-wrap gap-4 justify-center p-6">
+        {Object.keys(words).map((key) => (
+          <Button key={key} onClick={() => startStats(Number(key))}>
+            Day {key}
+          </Button>
+        ))}
+      </div>
+    );
+  }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-white p-4">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold mb-6">📊 지민이 학습 통계</h1>
-
-        {sortedDates.length === 0 ? (
-          <p className="text-gray-500">아직 저장된 학습 기록이 없습니다.</p>
-        ) : (
-          <table className="min-w-[300px] border border-gray-300 text-center">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="border px-4 py-2">날짜</th>
-                <th className="border px-4 py-2">학습 Day</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedDates.map((date) => (
-                <tr key={date}>
-                  <td className="border px-4 py-2">{date}</td>
-                  <td className="border px-4 py-2">Day {log[date]}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+    <div className="flex flex-col items-center justify-center p-6">
+      <h1 className="text-xl font-bold mb-4">📊 단어 통계 보기</h1>
+      <div className="text-lg mb-2">
+        {currentIndex + 1} / {shuffledWords.length}
       </div>
-    </main>
+      <div className="text-2xl font-semibold mb-2">
+        {shuffledWords[currentIndex]?.word}
+      </div>
+      <div className="text-lg text-gray-300 mb-4">
+        {shuffledWords[currentIndex]?.mean}
+      </div>
+      <div className="flex gap-4 mt-2">
+        <Button onClick={goToPrevious} variant="secondary">
+          이전 단어
+        </Button>
+        <Button onClick={goToNext} variant="secondary">
+          다음 단어
+        </Button>
+        <Button onClick={resetStats} variant="outline">
+          처음부터
+        </Button>
+      </div>
+    </div>
   );
 }

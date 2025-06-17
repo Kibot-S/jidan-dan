@@ -1,106 +1,110 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import words from "@/data/words.json";
 
 export default function QuizPage() {
   const [day, setDay] = useState<number | null>(null);
-  const [index, setIndex] = useState(0);
-  const [words, setWords] = useState<any[]>([]);
-  const [answer, setAnswer] = useState("");
-  const [result, setResult] = useState<null | boolean>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [input, setInput] = useState("");
+  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+  const [shuffledWords, setShuffledWords] = useState<any[]>([]);
 
   useEffect(() => {
     if (day !== null) {
-      fetch(`/data/jidandan_days/day${String(day + 1).padStart(2, "0")}.json`)
-        .then((res) => res.json())
-        .then((data) => {
-          setWords(data);
-          setIndex(0);
-          setAnswer("");
-          setResult(null);
-        });
+      const selectedDay = words[day];
+      const shuffled = [...selectedDay].sort(() => 0.5 - Math.random());
+      setShuffledWords(shuffled);
+      setCurrentIndex(0);
+      setInput("");
+      setIsCorrect(null);
     }
   }, [day]);
 
-  const handleSubmit = () => {
-    const correct = words[index].word.toLowerCase().trim() === answer.toLowerCase().trim();
-    setResult(correct);
-  };
-
-  const handleNext = () => {
-    setAnswer("");
-    setResult(null);
-    if (index < words.length - 1) {
-      setIndex((prev) => prev + 1);
+  const handleAnswer = () => {
+    if (
+      input.trim().toLowerCase() ===
+      shuffledWords[currentIndex]?.word.toLowerCase()
+    ) {
+      setIsCorrect(true);
     } else {
-      setDay(null);
-      setIndex(0);
+      setIsCorrect(false);
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && result === null) {
-      handleSubmit();
-    }
+  const goToNext = () => {
+    setInput("");
+    setIsCorrect(null);
+    setCurrentIndex((prev) => (prev + 1) % shuffledWords.length);
   };
+
+  const goToPrevious = () => {
+    setInput("");
+    setIsCorrect(null);
+    setCurrentIndex((prev) =>
+      prev === 0 ? shuffledWords.length - 1 : prev - 1
+    );
+  };
+
+  const resetQuiz = () => {
+    setInput("");
+    setIsCorrect(null);
+    setCurrentIndex(0);
+  };
+
+  if (day === null) {
+    return (
+      <div className="flex flex-wrap gap-4 justify-center p-6">
+        {Object.keys(words).map((key) => (
+          <Button key={key} onClick={() => setDay(Number(key))}>
+            Day {key}
+          </Button>
+        ))}
+      </div>
+    );
+  }
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-4">
-      {day === null ? (
-        <div className="grid grid-cols-4 gap-4">
-          {Array.from({ length: 33 }).map((_, i) => (
-            <button
-              key={i}
-              className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl shadow-md transition duration-200"
-              onClick={() => setDay(i)}
-            >
-              Day {i + 1}
-            </button>
-          ))}
+    <div className="flex flex-col items-center justify-center p-6">
+      <h1 className="text-xl font-bold mb-4">
+        ✏️ 단어를 영어로 입력해보세요
+      </h1>
+      <div className="text-lg mb-2">
+        {currentIndex + 1} / {shuffledWords.length}
+      </div>
+      <div className="text-2xl mb-4">
+        {shuffledWords[currentIndex]?.mean}
+      </div>
+      <input
+        type="text"
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && handleAnswer()}
+        className="border rounded p-2 text-black"
+        placeholder="영단어 입력"
+      />
+      <Button onClick={handleAnswer} className="mt-2">
+        정답 제출
+      </Button>
+      {isCorrect !== null && (
+        <div className={`mt-2 ${isCorrect ? "text-green-500" : "text-red-500"}`}>
+          {isCorrect
+            ? "✅ 정답입니다!"
+            : `❌ 오답입니다. 정답: ${shuffledWords[currentIndex]?.word}`}
         </div>
-      ) : words.length > 0 ? (
-        <div className="text-center space-y-4">
-          <div className="text-sm text-gray-500">
-            문제 {index + 1} / {words.length}
-          </div>
-          <div className="text-lg text-gray-700">
-            뜻: {words[index].meaning}
-          </div>
-          <input
-            type="text"
-            value={answer}
-            onChange={(e) => setAnswer(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className="border px-4 py-2 rounded-md"
-            placeholder="영어 단어 입력"
-          />
-          {result !== null && (
-            <div className={`font-bold ${result ? "text-green-600" : "text-red-600"}`}>
-              {result ? "정답입니다!" : `오답입니다. 정답: ${words[index].word}`}
-            </div>
-          )}
-
-          <div className="flex gap-4 justify-center mt-6">
-            {result === null ? (
-              <button
-                onClick={handleSubmit}
-                className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl shadow-md transition duration-200"
-              >
-                정답 제출
-              </button>
-            ) : (
-              <button
-                onClick={handleNext}
-                className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl shadow-md transition duration-200"
-              >
-                다음 문제
-              </button>
-            )}
-          </div>
-        </div>
-      ) : (
-        <div className="text-gray-600">로딩 중...</div>
       )}
-    </main>
+      <div className="flex gap-4 mt-4">
+        <Button onClick={goToPrevious} variant="secondary">
+          이전 단어
+        </Button>
+        <Button onClick={goToNext} variant="secondary">
+          다음 단어
+        </Button>
+        <Button onClick={resetQuiz} variant="outline">
+          처음부터
+        </Button>
+      </div>
+    </div>
   );
 }
