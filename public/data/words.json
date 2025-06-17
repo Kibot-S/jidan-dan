@@ -1,0 +1,14 @@
+[
+  [
+    { "word": "apple", "meaning": "사과" },
+    { "word": "banana", "meaning": "바나나" }
+  ],
+  [
+    { "word": "cat", "meaning": "고양이" },
+    { "word": "dog", "meaning": "강아지" }
+  ],
+  [
+    { "word": "egg", "meaning": "달걀" },
+    { "word": "fish", "meaning": "물고기" }
+  ]
+]
